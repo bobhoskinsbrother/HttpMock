@@ -1,0 +1,267 @@
+<project name="HttpMock" default="HttpMock" basedir=".">
+
+    <property file="build.properties"/>
+    <dirname property="HttpMock.basedir" file="${ant.file.HttpMock}"/>
+    <property name="HttpMock.jar" value="HttpMock.jar"/>
+    <property name="HttpMock_test.jar" value="HttpMock_test.jar"/>
+
+    <target name="HttpMock" depends="make.HttpMock,test.HttpMock,save.HttpMock"/>
+
+    <target name="make.HttpMock" depends="clean.HttpMock">
+        <make module="${HttpMock.basedir}" jarname="${HttpMock.jar}" source="src" targetdir="made">
+            <make.classpath>
+                <classpath>
+                    <resources refid="compile.HttpMock.fileset"/>
+                </classpath>
+            </make.classpath>
+        </make>
+        <make module="${HttpMock.basedir}" jarname="${HttpMock_test.jar}" source="test" targetdir="made">
+            <make.classpath>
+                <classpath>
+                    <pathelement location="${HttpMock.basedir}/made/${HttpMock.jar}"/>
+                    <resources refid="compile.HttpMock.fileset"/>
+                    <resources refid="test.HttpMock.fileset"/>
+                </classpath>
+            </make.classpath>
+        </make>
+    </target>
+
+    <target name="test.HttpMock" depends="unit.test.HttpMock"/>
+
+    <target name="unit.test.HttpMock">
+        <test jarname="${HttpMock.basedir}/made/${HttpMock_test.jar}" basedir="${HttpMock.basedir}">
+            <test.classpath>
+                <classpath>
+                    <pathelement location="${HttpMock.basedir}/made/${HttpMock_test.jar}"/>
+                    <pathelement location="${HttpMock.basedir}/made/${HttpMock.jar}"/>
+                    <resources refid="compile.HttpMock.fileset"/>
+                    <resources refid="test.HttpMock.fileset"/>
+                </classpath>
+            </test.classpath>
+        </test>
+    </target>
+
+    <target name="save.HttpMock">
+        <sequential>
+            <zip destfile="${HttpMock.basedir}/dist/HttpMock.zip">
+                <union>
+                    <mappedresources>
+                        <resources refid="compile.HttpMock.fileset"/>
+                        <globmapper from="*" to="lib/*"/>
+                    </mappedresources>
+                    <mappedresources>
+                        <fileset dir="${HttpMock.basedir}/made">
+                            <include name="${HttpMock.jar}"/>
+                        </fileset>
+                        <globmapper from="*" to="lib/*"/>
+                    </mappedresources>
+                </union>
+            </zip>
+            <publish targetdir="${libs.repository}" distdir="${HttpMock.basedir}/dist"/>
+        </sequential>
+    </target>
+
+    <target name="clean.HttpMock">
+        <init.dir dir="${HttpMock.basedir}/made"/>
+        <init.dir dir="${HttpMock.basedir}/dist"/>
+    </target>
+
+    <union id="test.HttpMock.fileset">
+        <resources refid="unit_tests"/>
+    </union>
+
+    <union id="compile.HttpMock.fileset">
+        <resources refid="hamcrest_core"/>
+    </union>
+
+
+
+<!-- ********************************************************************************************************* -->
+
+
+
+    <fileset id="unit_tests" dir="${libs.repository}/">
+        <include name="junit-4.12.jar"/>
+        <include name="hamcrest-core-1.3.jar"/>
+    </fileset>
+
+    <fileset id="hamcrest_core" dir="${libs.repository}/">
+        <include name="hamcrest-core-1.3.jar"/>
+    </fileset>
+
+
+
+<!-- ********************************************************************************************************* -->
+
+
+
+    <macrodef name="make">
+        <attribute name="module"/>
+        <attribute name="source"/>
+        <attribute name="targetdir"/>
+        <attribute name="jarname"/>
+        <element name="make.classpath"/>
+        <element name="make.manifest" optional="true"/>
+        <sequential>
+            <java.compile module="@{module}" source="@{source}">
+                <classpath.element>
+                    <make.classpath/>
+                </classpath.element>
+            </java.compile>
+            <copy.resource module="@{module}" source="@{source}"/>
+            <java.jar jarname="@{jarname}" module="@{module}" targetdir="@{targetdir}">
+                <manifest.element>
+                    <make.manifest/>
+                </manifest.element>
+            </java.jar>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="test">
+        <attribute name="jarname"/>
+        <attribute name="basedir"/>
+        <element name="test.classpath"/>
+        <sequential>
+            <junit fork="true" haltonfailure="true" haltonerror="true" printsummary="true" showoutput="true"
+                   dir="@{basedir}">
+                <jvmarg value="-Xmx${maximum.memory}"/>
+                <!--<jvmarg value="-XX:MaxPermSize=${maximum.permanent.memory}" />-->
+                <test.classpath/>
+                <formatter type="xml"/>
+                <batchtest todir="output">
+                    <zipfileset src="@{jarname}" includes="**/*Test.class" excludes="functional/**"/>
+                </batchtest>
+            </junit>
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="functional.test">
+        <attribute name="jarname"/>
+        <attribute name="basedir"/>
+        <element name="test.classpath"/>
+        <sequential>
+            <init.dir dir="@{basedir}/output"/>
+            <junit fork="true" haltonfailure="true" haltonerror="true" printsummary="true" showoutput="true"
+                   dir="@{basedir}">
+                <jvmarg value="-Xmx${maximum.memory}"/>
+                <jvmarg value="-XX:MaxPermSize=${maximum.permanent.memory}"/>
+                <test.classpath/>
+                <formatter type="xml"/>
+                <batchtest todir="@{basedir}/output">
+                    <zipfileset src="@{jarname}" includes="functional/**/*Test.class"/>
+                </batchtest>
+            </junit>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="testsuite">
+        <attribute name="suitename"/>
+        <attribute name="basedir"/>
+        <element name="test.classpath"/>
+        <sequential>
+            <init.dir dir="@{basedir}/output"/>
+            <junit fork="true" haltonfailure="true" printsummary="true" showoutput="true" dir="@{basedir}">
+                <jvmarg value="-Xmx${maximum.memory}"/>
+                <jvmarg value="-XX:MaxPermSize=${maximum.permanent.memory}"/>
+                <test.classpath/>
+                <formatter type="xml"/>
+                <test name="@{suitename}"/>
+            </junit>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="save">
+        <attribute name="targetdir"/>
+        <element name="save.fileset"/>
+        <sequential>
+            <init.dir dir="@{targetdir}"/>
+            <copy todir="@{targetdir}">
+                <save.fileset/>
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="publish">
+        <attribute name="targetdir"/>
+        <attribute name="distdir"/>
+        <sequential>
+            <copy todir="@{targetdir}">
+                <fileset dir="@{distdir}" includes="**/*"/>
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="java.compile">
+        <attribute name="source"/>
+        <attribute name="module"/>
+        <element name="classpath.element" optional="true"/>
+        <sequential>
+            <init.dir dir="@{module}/classes" />
+            <javac srcdir="@{module}/@{source}" destdir="@{module}/classes" debug="true" includeantruntime="false" encoding="UTF-8">
+                <compilerarg value="-Xlint:unchecked" />
+                <classpath.element/>
+            </javac>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="java.jar">
+        <attribute name="jarname"/>
+        <attribute name="module"/>
+        <attribute name="targetdir"/>
+        <element name="manifest.element" optional="true"/>
+        <sequential>
+            <jar destfile="@{module}/@{targetdir}/@{jarname}">
+                <manifest.element/>
+                <fileset dir="@{module}/classes">
+                    <include name="**/*"/>
+                </fileset>
+            </jar>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="copyfiles">
+        <attribute name="fromdir"/>
+        <attribute name="todir"/>
+        <attribute name="pattern"/>
+        <sequential>
+            <copy todir="@{todir}" failonerror="true">
+                <fileset dir="@{fromdir}">
+                    <include name="@{pattern}"/>
+                </fileset>
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="copy.resource">
+        <attribute name="module"/>
+        <attribute name="source"/>
+        <sequential>
+            <copy todir="@{module}/classes" failonerror="false">
+                <fileset dir="@{module}/@{source}_resources">
+                    <include name="**/*"/>
+                </fileset>
+            </copy>
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="init.dir">
+        <attribute name="dir"/>
+        <sequential>
+            <delete dir="@{dir}" includeemptydirs="true"/>
+            <mkdir dir="@{dir}"/>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="bash">
+        <attribute name="script"/>
+        <element name="args" optional="true"/>
+        <sequential>
+            <exec executable="/bin/bash">
+                <arg value="@{script}"/>
+                <args/>
+            </exec>
+        </sequential>
+    </macrodef>
+</project>
