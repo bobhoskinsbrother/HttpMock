@@ -20,7 +20,7 @@ ant
 cd dist
 unzip HttpMock.zip
 ```
-This has the built library, and the version of hamcrest I sued bundled with it.
+This has the built library, and the version of hamcrest I used bundled with it.
 
 
 #### Examples
