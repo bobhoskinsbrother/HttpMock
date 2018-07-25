@@ -1,4 +1,4 @@
-package com.hosksoft.httpmock.example;
+package com.hosksoft.httpmock.acceptance;
 
 import com.hosksoft.httpmock.HttpMock;
 import com.hosksoft.httpmock.HttpSender.ResponseToClient;

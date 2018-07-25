@@ -2,8 +2,8 @@
 
     <property file="build.properties"/>
     <dirname property="HttpMock.basedir" file="${ant.file.HttpMock}"/>
-    <property name="HttpMock.jar" value="HttpMock.jar"/>
-    <property name="HttpMock_test.jar" value="HttpMock_test.jar"/>
+    <property name="HttpMock.jar" value="httpmock-${lib.version}.jar"/>
+    <property name="HttpMock_test.jar" value="httpmock_test-${lib.version}.jar"/>
 
     <target name="HttpMock" depends="make.HttpMock,test.HttpMock,save.HttpMock"/>
 
@@ -43,21 +43,18 @@
 
     <target name="save.HttpMock">
         <sequential>
-            <zip destfile="${HttpMock.basedir}/dist/HttpMock.zip">
+            <zip destfile="${HttpMock.basedir}/dist/httpmock-${lib.version}.zip">
                 <union>
                     <mappedresources>
                         <resources refid="compile.HttpMock.fileset"/>
-                        <globmapper from="*" to="lib/*"/>
                     </mappedresources>
                     <mappedresources>
                         <fileset dir="${HttpMock.basedir}/made">
                             <include name="${HttpMock.jar}"/>
                         </fileset>
-                        <globmapper from="*" to="lib/*"/>
                     </mappedresources>
                 </union>
             </zip>
-            <publish targetdir="${libs.repository}" distdir="${HttpMock.basedir}/dist"/>
         </sequential>
     </target>
 
@@ -129,44 +126,8 @@
                 <test.classpath/>
                 <formatter type="xml"/>
                 <batchtest todir="output">
-                    <zipfileset src="@{jarname}" includes="**/*Test.class" excludes="functional/**"/>
+                    <zipfileset src="@{jarname}" includes="**/*Test.class" />
                 </batchtest>
-            </junit>
-        </sequential>
-    </macrodef>
-
-
-    <macrodef name="functional.test">
-        <attribute name="jarname"/>
-        <attribute name="basedir"/>
-        <element name="test.classpath"/>
-        <sequential>
-            <init.dir dir="@{basedir}/output"/>
-            <junit fork="true" haltonfailure="true" haltonerror="true" printsummary="true" showoutput="true"
-                   dir="@{basedir}">
-                <jvmarg value="-Xmx${maximum.memory}"/>
-                <jvmarg value="-XX:MaxPermSize=${maximum.permanent.memory}"/>
-                <test.classpath/>
-                <formatter type="xml"/>
-                <batchtest todir="@{basedir}/output">
-                    <zipfileset src="@{jarname}" includes="functional/**/*Test.class"/>
-                </batchtest>
-            </junit>
-        </sequential>
-    </macrodef>
-
-    <macrodef name="testsuite">
-        <attribute name="suitename"/>
-        <attribute name="basedir"/>
-        <element name="test.classpath"/>
-        <sequential>
-            <init.dir dir="@{basedir}/output"/>
-            <junit fork="true" haltonfailure="true" printsummary="true" showoutput="true" dir="@{basedir}">
-                <jvmarg value="-Xmx${maximum.memory}"/>
-                <jvmarg value="-XX:MaxPermSize=${maximum.permanent.memory}"/>
-                <test.classpath/>
-                <formatter type="xml"/>
-                <test name="@{suitename}"/>
             </junit>
         </sequential>
     </macrodef>
@@ -178,16 +139,6 @@
             <init.dir dir="@{targetdir}"/>
             <copy todir="@{targetdir}">
                 <save.fileset/>
-            </copy>
-        </sequential>
-    </macrodef>
-
-    <macrodef name="publish">
-        <attribute name="targetdir"/>
-        <attribute name="distdir"/>
-        <sequential>
-            <copy todir="@{targetdir}">
-                <fileset dir="@{distdir}" includes="**/*"/>
             </copy>
         </sequential>
     </macrodef>
@@ -254,14 +205,4 @@
         </sequential>
     </macrodef>
 
-    <macrodef name="bash">
-        <attribute name="script"/>
-        <element name="args" optional="true"/>
-        <sequential>
-            <exec executable="/bin/bash">
-                <arg value="@{script}"/>
-                <args/>
-            </exec>
-        </sequential>
-    </macrodef>
 </project>

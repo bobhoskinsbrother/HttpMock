@@ -3,6 +3,7 @@ package com.hosksoft.httpmock;
 import com.hosksoft.httpmock.server.HttpMockHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -20,7 +21,7 @@ public class HttpMock {
     private final HttpMockHandler httpHandler;
     private InetSocketAddress address;
 
-    public HttpMock() throws Exception {
+    public HttpMock() {
         this(generateRandomPortAbove1024());
     }
 
@@ -29,7 +30,7 @@ public class HttpMock {
         return (random.nextInt(9000) + 1024);
     }
 
-    public HttpMock(int port) throws Exception {
+    public HttpMock(int port) {
         this.port = port;
         this.expected = new LinkedList<>();
         while (HUMANS_RULE_THE_EARTH) {
@@ -39,6 +40,8 @@ public class HttpMock {
                 break;
             } catch (BindException exception) {
                 port++;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
         httpHandler = new HttpMockHandler();
